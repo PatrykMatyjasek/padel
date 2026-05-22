@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id          String       @id @default(cuid())
+  name        String
+  email       String       @unique
+  password    String
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  tournaments Tournament[]
+  players     Player[]
+}
+
+model Tournament {
+  id             String       @id @default(cuid())
+  name           String
+  location       String
+  startDate      DateTime
+  format         String
+  courts         Int
+  pointsPerMatch Int
+  mexicanoRounds Int
+  isClosed       Boolean      @default(false)
+  shareToken     String?      @unique
+  userId         String?
+  user           User?        @relation(fields: [userId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  players        Player[]     @relation("TournamentPlayers")
+  matchScores    MatchScore[]
+}
+
+model Player {
+  id          String       @id @default(cuid())
+  name        String
+  userId      String?
+  user        User?        @relation(fields: [userId], references: [id])
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  tournaments Tournament[] @relation("TournamentPlayers")
+  homeMatches MatchScore[] @relation("HomePlayers")
+  awayMatches MatchScore[] @relation("AwayPlayers")
+}
+
+model Feedback {
+  id        String   @id @default(cuid())
+  message   String
+  rating    Int?
+  name      String?
+  email     String?
+  page      String?
+  userId    String?
+  createdAt DateTime @default(now())
+}
+
+model PageView {
+  id        String   @id @default(cuid())
+  path      String
+  userId    String?
+  createdAt DateTime @default(now())
+}
+
+model MatchScore {
+  id           String     @id @default(cuid())
+  tournament   Tournament @relation(fields: [tournamentId], references: [id])
+  tournamentId String
+  homeTeam     Player[]   @relation("HomePlayers")
+  awayTeam     Player[]   @relation("AwayPlayers")
+  homeScore    Int
+  awayScore    Int
+  round        Int        @default(1)
+  locked       Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}

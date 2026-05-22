@@ -75,13 +75,13 @@ export default function AdminPage() {
           <h1 className="text-xl font-bold">Admin dashboard</h1>
           <p className="text-sm text-muted-foreground mt-0.5">Global platform statistics</p>
         </div>
-        <div className="border-b flex gap-0">
+        <div className="border-b flex gap-0 overflow-x-auto scrollbar-none">
           {(["overview", "feedback"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
               className={[
-                "px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px capitalize",
+                "px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px capitalize shrink-0 whitespace-nowrap",
                 tab === t ? "border-primary text-primary" : "border-transparent text-muted-foreground hover:text-foreground hover:border-border",
               ].join(" ")}
             >
@@ -138,7 +138,8 @@ export default function AdminPage() {
         <div className="space-y-2">
           <h2 className="text-base font-semibold">Top pages (all time)</h2>
           <div className="card overflow-hidden">
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[280px]">
               <thead className="bg-muted/50">
                 <tr>
                   <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Path</th>
@@ -154,6 +155,7 @@ export default function AdminPage() {
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         </div>
 
@@ -161,7 +163,8 @@ export default function AdminPage() {
         <div className="space-y-2">
           <h2 className="text-base font-semibold">Recent signups</h2>
           <div className="card overflow-hidden">
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[320px]">
               <thead className="bg-muted/50">
                 <tr>
                   <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Name</th>
@@ -184,6 +187,7 @@ export default function AdminPage() {
                 )}
               </tbody>
             </table>
+            </div>
           </div>
         </div>
       </div>
@@ -192,7 +196,8 @@ export default function AdminPage() {
       <div className="space-y-2">
         <h2 className="text-base font-semibold">Recent tournaments</h2>
         <div className="card overflow-hidden">
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto">
+          <table className="w-full text-sm min-w-[480px]">
             <thead className="bg-muted/50">
               <tr>
                 <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Name</th>
@@ -229,6 +234,7 @@ export default function AdminPage() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
       </>)}

@@ -61,7 +61,8 @@ export default function TournamentScoreTable({ tournament, scores }: TournamentS
       </div>
 
       <div className="card overflow-hidden">
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full text-sm min-w-[300px]">
           <thead className="bg-muted/50">
             <tr>
               <th className="text-left px-4 py-2.5 font-medium text-muted-foreground w-10">#</th>
@@ -85,6 +86,7 @@ export default function TournamentScoreTable({ tournament, scores }: TournamentS
             ))}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

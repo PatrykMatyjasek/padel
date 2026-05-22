@@ -10,12 +10,15 @@ export default function TournamentDetails({ tournament }: { tournament: any }) {
   const items: { label: string; value: string }[] = [
     { label: "Location", value: tournament.location || "—" },
     { label: "Start date", value: date },
-    { label: "Format", value: tournament.format === "AM" ? "Americano" : "Mexicano" },
-    { label: "Courts", value: String(tournament.courts) },
-    { label: "Points per match", value: String(tournament.pointsPerMatch) },
-    ...(tournament.format === "MX"
-      ? [{ label: "Rounds", value: String(tournament.mexicanoRounds) }]
-      : []),
+    { label: "Format", value: tournament.format === "AM" ? "Americano" : tournament.format === "MX" ? "Mexicano" : "Classic" },
+    ...(tournament.format !== "CL" ? [{ label: "Courts", value: String(tournament.courts) }] : []),
+    ...(tournament.format !== "CL" ? [{ label: "Points per match", value: String(tournament.pointsPerMatch) }] : []),
+    ...(tournament.format === "MX" ? [{ label: "Rounds", value: String(tournament.mexicanoRounds) }] : []),
+    ...(tournament.format === "CL" ? [
+      { label: "Groups", value: String(tournament.numGroups ?? 1) },
+      { label: "Advance/group", value: String(tournament.advancePerGroup ?? 2) },
+      { label: "Sets to win", value: String(tournament.setsToWin ?? 2) },
+    ] : []),
     { label: "Players", value: String(tournament.players?.length ?? 0) },
   ];
 

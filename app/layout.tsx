@@ -21,7 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <SessionProvider>
           <Header />
           <PageTracker />
-          <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
+          <main className="max-w-5xl mx-auto px-2 sm:px-4 lg:px-6 py-4 sm:py-8">
             {children}
           </main>
           <FeedbackWidget />

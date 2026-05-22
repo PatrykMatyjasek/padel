@@ -83,11 +83,11 @@ export default function FeedbackWidget() {
   };
 
   return (
-    <div className="fixed bottom-5 right-5 z-50 flex flex-col items-end gap-2">
+    <div className="fixed bottom-5 right-4 sm:right-5 z-50 flex flex-col items-end gap-2">
       {open && (
         <div
           ref={panelRef}
-          className="card w-80 shadow-xl border border-border overflow-hidden"
+          className="card w-[min(320px,calc(100vw-2rem))] shadow-xl border border-border overflow-hidden"
         >
           {done ? (
             <div className="p-6 text-center space-y-3">

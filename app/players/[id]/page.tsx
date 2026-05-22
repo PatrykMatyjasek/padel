@@ -105,7 +105,7 @@ export default function PlayerPage({ params }: { params: Promise<{ id: string }>
       </div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 gap-3">
         <StatCard label="Matches" value={stats.matches} />
         <StatCard label="Points" value={stats.points} sub={stats.matches > 0 ? `${(stats.points / stats.matches).toFixed(1)} avg` : undefined} />
         <StatCard label="Win rate" value={`${Math.round(stats.winRate * 100)}%`} sub={`${stats.wins} wins`} />
@@ -182,7 +182,8 @@ export default function PlayerPage({ params }: { params: Promise<{ id: string }>
       {partners.length > 0 && (
         <Section title="Partner record">
           <div className="card overflow-hidden">
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[360px]">
               <thead className="bg-muted/50">
                 <tr>
                   <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Partner</th>
@@ -206,6 +207,7 @@ export default function PlayerPage({ params }: { params: Promise<{ id: string }>
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         </Section>
       )}
@@ -214,7 +216,8 @@ export default function PlayerPage({ params }: { params: Promise<{ id: string }>
       {rivals.length > 0 && (
         <Section title="Head-to-head vs opponents">
           <div className="card overflow-hidden">
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[360px]">
               <thead className="bg-muted/50">
                 <tr>
                   <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Opponent</th>
@@ -238,6 +241,7 @@ export default function PlayerPage({ params }: { params: Promise<{ id: string }>
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         </Section>
       )}
@@ -246,7 +250,8 @@ export default function PlayerPage({ params }: { params: Promise<{ id: string }>
       {tournaments.length > 0 && (
         <Section title="Tournament history">
           <div className="card overflow-hidden">
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto">
+            <table className="w-full text-sm min-w-[280px]">
               <thead className="bg-muted/50">
                 <tr>
                   <th className="text-left px-4 py-2.5 font-medium text-muted-foreground w-10">#</th>
@@ -279,6 +284,7 @@ export default function PlayerPage({ params }: { params: Promise<{ id: string }>
                 ))}
               </tbody>
             </table>
+            </div>
           </div>
         </Section>
       )}

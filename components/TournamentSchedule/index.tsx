@@ -105,28 +105,29 @@ function ScorePicker({
   onChange: (v: number) => void;
   disabled: boolean;
 }) {
-  const nums = Array.from({ length: max + 1 }, (_, i) => i);
+  const minWin = Math.floor(max / 2) + 1;
+  const nums = Array.from({ length: max - minWin + 1 }, (_, i) => i + minWin);
 
   return (
-    <div className="space-y-2 flex-1">
+    <div className="space-y-3 flex-1">
       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide text-center">
         {label}
       </p>
       {value !== null && (
-        <p className="text-4xl font-black tabular-nums text-center text-foreground leading-none">
+        <p className="text-5xl font-black tabular-nums text-center text-foreground leading-none">
           {value}
         </p>
       )}
       {!disabled && (
-        <div className="grid grid-cols-6 gap-1">
+        <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
           {nums.map((n) => (
             <button
               key={n}
               onClick={() => onChange(n)}
               className={[
-                "rounded-lg py-2 text-sm font-semibold transition-all",
+                "rounded-xl py-3 text-base font-bold transition-all",
                 value === n
-                  ? "bg-primary text-primary-foreground shadow-sm scale-105"
+                  ? "bg-primary text-primary-foreground shadow-md scale-105"
                   : "bg-muted hover:bg-muted/70 text-foreground",
               ].join(" ")}
             >
@@ -153,8 +154,6 @@ function MatchRow({
   onSave: (home: number, away: number) => void;
 }) {
   const [editing, setEditing] = useState(false);
-  const [home, setHome] = useState<number | null>(score?.home ?? null);
-  const [away, setAway] = useState<number | null>(score?.away ?? null);
 
   const locked = !!score?.locked;
   const savedHome = score?.home ?? null;
@@ -163,16 +162,9 @@ function MatchRow({
   const homePlayers = match.homeTeam?.map((p: any) => p.name).join(" & ") || "—";
   const awayPlayers = match.awayTeam?.map((p: any) => p.name).join(" & ") || "—";
 
-  const handleSave = () => {
-    if (home === null || away === null) return;
-    onSave(home, away);
+  const handlePick = (homeScore: number, awayScore: number) => {
+    onSave(homeScore, awayScore);
     setEditing(false);
-  };
-
-  const handleEdit = () => {
-    setHome(savedHome);
-    setAway(savedAway);
-    setEditing(true);
   };
 
   return (
@@ -200,15 +192,15 @@ function MatchRow({
 
         {!disabled && (
           <div className="ml-3 shrink-0">
-            {locked ? (
+            {locked && !editing ? (
               <button
-                onClick={handleEdit}
+                onClick={() => setEditing(true)}
                 className="text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
               >
                 Edit
               </button>
-            ) : !editing ? (
-              <Button size="sm" onClick={() => { setEditing(true); setHome(null); setAway(null); }}>
+            ) : !locked && !editing ? (
+              <Button size="sm" onClick={() => setEditing(true)}>
                 Enter score
               </Button>
             ) : null}
@@ -219,39 +211,31 @@ function MatchRow({
       {/* Score picker (expanded) */}
       {editing && !disabled && (
         <div className="border-t px-4 py-4 space-y-4 bg-muted/20">
-          <div className="flex gap-6">
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">Tap the winning team's score</p>
+            <button
+              onClick={() => setEditing(false)}
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              ✕ Cancel
+            </button>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-4">
             <ScorePicker
               label={homePlayers}
-              value={home}
+              value={savedHome}
               max={maxPoints}
-              onChange={(v) => { setHome(v); setAway(maxPoints - v); }}
+              onChange={(v) => handlePick(v, maxPoints - v)}
               disabled={false}
             />
-            <div className="w-px bg-border shrink-0 self-stretch" />
+            <div className="h-px sm:h-auto sm:w-px bg-border shrink-0 sm:self-stretch" />
             <ScorePicker
               label={awayPlayers}
-              value={away}
+              value={savedAway}
               max={maxPoints}
-              onChange={(v) => { setAway(v); setHome(maxPoints - v); }}
+              onChange={(v) => handlePick(maxPoints - v, v)}
               disabled={false}
             />
-          </div>
-
-          <div className="flex justify-end gap-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => { setEditing(false); setHome(savedHome); setAway(savedAway); }}
-            >
-              Cancel
-            </Button>
-            <Button
-              size="sm"
-              disabled={home === null || away === null}
-              onClick={handleSave}
-            >
-              Save score
-            </Button>
           </div>
         </div>
       )}

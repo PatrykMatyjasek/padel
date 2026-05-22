@@ -128,4 +128,11 @@
   .card {
     @apply bg-card rounded-xl shadow-sm border border-border/60;
   }
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
 }

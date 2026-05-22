@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
 type Tab = "tournaments" | "players" | "stats" | "new";
+type StatsFormat = "all" | "AM" | "MX" | "CL";
 
 const MEDALS = ["🥇", "🥈", "🥉"];
 
@@ -17,6 +18,7 @@ export default function HomePage() {
   const [players, setPlayers] = useState<any[]>([]);
   const [playerName, setPlayerName] = useState("");
   const [stats, setStats] = useState<any>(null);
+  const [statsFormat, setStatsFormat] = useState<StatsFormat>("all");
 
   useEffect(() => {
     if (tab === "tournaments") {
@@ -54,7 +56,6 @@ export default function HomePage() {
     { id: "tournaments", label: "Tournaments" },
     { id: "players", label: "Players" },
     ...(session ? [{ id: "stats" as Tab, label: "Statistics" }] : []),
-    { id: "new", label: "+ New tournament" },
   ];
 
   return (
@@ -73,13 +74,13 @@ export default function HomePage() {
       )}
 
       {/* Tab bar */}
-      <div className="border-b flex gap-0">
+      <div className="border-b flex gap-0 overflow-x-auto scrollbar-none">
         {tabs.map((t) => (
           <button
             key={t.id}
             onClick={() => setTab(t.id)}
             className={[
-              "px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px",
+              "px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px shrink-0 whitespace-nowrap",
               tab === t.id
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground hover:border-border",
@@ -93,14 +94,21 @@ export default function HomePage() {
       {/* Tournaments */}
       {tab === "tournaments" && (
         <section className="space-y-4">
-          <h1 className="text-xl font-bold">
-            {session ? `${session.user.name}'s Tournaments` : "Tournaments"}
-          </h1>
+          <div className="flex items-center justify-between gap-3">
+            <h1 className="text-xl font-bold">
+              {session ? `${session.user.name}'s Tournaments` : "Tournaments"}
+            </h1>
+            <Button onClick={() => setTab("new")} size="sm" className="shrink-0">
+              + New tournament
+            </Button>
+          </div>
           {tournaments.length === 0 ? (
-            <EmptyState
-              text="No tournaments yet"
-              hint='Create your first tournament by clicking "+ New tournament"'
-            />
+            <div className="card p-10 text-center space-y-4">
+              <p className="font-medium text-muted-foreground">No tournaments yet</p>
+              <Button onClick={() => setTab("new")} size="lg" className="w-full sm:w-auto">
+                + Create your first tournament
+              </Button>
+            </div>
           ) : (
             <div className="grid gap-3">
               {tournaments.map((t) => (
@@ -176,67 +184,103 @@ export default function HomePage() {
             <div className="text-sm text-muted-foreground">Loading…</div>
           ) : (
             <>
-              {/* Summary cards */}
+              {/* Summary cards — always show all-time totals */}
               <div className="grid grid-cols-3 gap-4">
                 <StatCard label="Tournaments" value={stats.totals.tournaments} />
                 <StatCard label="Matches played" value={stats.totals.matchesPlayed} />
                 <StatCard label="Players" value={stats.totals.players} />
               </div>
 
-              {/* Player leaderboard */}
-              {stats.players.length === 0 ? (
-                <EmptyState
-                  text="No match data yet"
-                  hint="Save scores in your tournaments to see player rankings here"
-                />
-              ) : (
-                <div className="space-y-2">
-                  <h2 className="text-base font-semibold">All-time leaderboard</h2>
-                  <div className="card overflow-hidden">
-                    <table className="w-full text-sm">
-                      <thead className="bg-muted/50">
-                        <tr>
-                          <th className="text-left px-4 py-2.5 font-medium text-muted-foreground w-10">#</th>
-                          <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Player</th>
-                          <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">Pts</th>
-                          <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">M</th>
-                          <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">Avg</th>
-                          <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">W</th>
-                          <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">T</th>
-                          <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">🏆</th>
-                          <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">🥇</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {stats.players.map((p: any, i: number) => (
-                          <tr key={p.id} className={["border-t", i === 0 ? "font-semibold" : ""].join(" ")}>
-                            <td className="px-4 py-2.5 text-muted-foreground">
-                              {MEDALS[i] ?? i + 1}
-                            </td>
-                            <td className="px-4 py-2.5">
-                              <Link href={`/players/${p.id}`} className="hover:text-primary transition-colors">
-                                {p.name}
-                              </Link>
-                            </td>
-                            <td className="px-4 py-2.5 text-right tabular-nums">{p.points}</td>
-                            <td className="px-4 py-2.5 text-right tabular-nums text-muted-foreground">{p.matches}</td>
-                            <td className="px-4 py-2.5 text-right tabular-nums text-muted-foreground">
-                              {p.matches > 0 ? (p.points / p.matches).toFixed(1) : "—"}
-                            </td>
-                            <td className="px-4 py-2.5 text-right tabular-nums text-muted-foreground">{p.wins}</td>
-                            <td className="px-4 py-2.5 text-right tabular-nums text-muted-foreground">{p.tournamentsPlayed}</td>
-                            <td className="px-4 py-2.5 text-right tabular-nums text-muted-foreground">{p.podiums}</td>
-                            <td className="px-4 py-2.5 text-right tabular-nums text-muted-foreground">{p.tournamentWins}</td>
+              {/* Format filter tabs */}
+              <div className="border-b flex gap-0 overflow-x-auto scrollbar-none">
+                {([
+                  { id: "all", label: "All formats" },
+                  { id: "AM", label: `Americano (${stats.byFormat.AM.totals.tournaments})` },
+                  { id: "MX", label: `Mexicano (${stats.byFormat.MX.totals.tournaments})` },
+                  { id: "CL", label: `Classic (${stats.byFormat.CL.totals.tournaments})` },
+                ] as { id: StatsFormat; label: string }[]).map((f) => (
+                  <button
+                    key={f.id}
+                    onClick={() => setStatsFormat(f.id)}
+                    className={[
+                      "px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px shrink-0 whitespace-nowrap",
+                      statsFormat === f.id
+                        ? "border-primary text-primary"
+                        : "border-transparent text-muted-foreground hover:text-foreground hover:border-border",
+                    ].join(" ")}
+                  >
+                    {f.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Leaderboard for selected format */}
+              {(() => {
+                const view = statsFormat === "all" ? { players: stats.players, totals: stats.totals } : stats.byFormat[statsFormat];
+                const formatLabel = statsFormat === "all" ? "All-time" : statsFormat === "AM" ? "Americano" : statsFormat === "MX" ? "Mexicano" : "Classic";
+                return view.players.length === 0 ? (
+                  <EmptyState
+                    text="No match data yet"
+                    hint={statsFormat === "all" ? "Save scores in your tournaments to see player rankings here" : `No scored matches in ${formatLabel} tournaments yet`}
+                  />
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <h2 className="text-base font-semibold">{formatLabel} leaderboard</h2>
+                      {statsFormat !== "all" && (
+                        <span className="text-xs text-muted-foreground">
+                          {view.totals.tournaments} {view.totals.tournaments === 1 ? "tournament" : "tournaments"} · {view.totals.matchesPlayed} matches
+                        </span>
+                      )}
+                    </div>
+                    <div className="card overflow-hidden">
+                      <div className="overflow-x-auto">
+                      <table className="w-full text-sm min-w-[420px]">
+                        <thead className="bg-muted/50">
+                          <tr>
+                            <th className="text-left px-4 py-2.5 font-medium text-muted-foreground w-10">#</th>
+                            <th className="text-left px-4 py-2.5 font-medium text-muted-foreground">Player</th>
+                            <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">Pts</th>
+                            <th className="text-right px-4 py-2.5 font-medium text-muted-foreground hidden sm:table-cell">M</th>
+                            <th className="text-right px-4 py-2.5 font-medium text-muted-foreground hidden sm:table-cell">Avg</th>
+                            <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">W</th>
+                            <th className="text-right px-4 py-2.5 font-medium text-muted-foreground hidden sm:table-cell">T</th>
+                            <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">🏆</th>
+                            <th className="text-right px-4 py-2.5 font-medium text-muted-foreground">🥇</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {view.players.map((p: any, i: number) => (
+                            <tr key={p.id} className={["border-t", i === 0 ? "font-semibold" : ""].join(" ")}>
+                              <td className="px-4 py-2.5 text-muted-foreground">
+                                {MEDALS[i] ?? i + 1}
+                              </td>
+                              <td className="px-4 py-2.5">
+                                <Link href={`/players/${p.id}`} className="hover:text-primary transition-colors">
+                                  {p.name}
+                                </Link>
+                              </td>
+                              <td className="px-4 py-2.5 text-right tabular-nums">{p.points}</td>
+                              <td className="px-4 py-2.5 text-right tabular-nums text-muted-foreground hidden sm:table-cell">{p.matches}</td>
+                              <td className="px-4 py-2.5 text-right tabular-nums text-muted-foreground hidden sm:table-cell">
+                                {p.matches > 0 ? (p.points / p.matches).toFixed(1) : "—"}
+                              </td>
+                              <td className="px-4 py-2.5 text-right tabular-nums text-muted-foreground">{p.wins}</td>
+                              <td className="px-4 py-2.5 text-right tabular-nums text-muted-foreground hidden sm:table-cell">{p.tournamentsPlayed}</td>
+                              <td className="px-4 py-2.5 text-right tabular-nums text-muted-foreground">{p.podiums}</td>
+                              <td className="px-4 py-2.5 text-right tabular-nums text-muted-foreground">{p.tournamentWins}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground px-1">
+                      M = matches played · Avg = pts/match · W = match wins · T = tournaments · 🏆 = podium finishes (top 3) · 🥇 = tournament wins — podiums and titles from closed tournaments only
+                    </p>
                   </div>
-                  <p className="text-xs text-muted-foreground px-1">
-                    M = matches played · Avg = pts/match · W = match wins · T = tournaments · 🏆 = podium finishes (top 3) · 🥇 = tournament wins — podiums and titles from closed tournaments only
-                  </p>
-                </div>
-              )}
+                );
+              })()}
             </>
           )}
         </section>
@@ -245,7 +289,15 @@ export default function HomePage() {
       {/* New tournament */}
       {tab === "new" && (
         <section className="space-y-4">
-          <h1 className="text-xl font-bold">New tournament</h1>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setTab("tournaments")}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            >
+              ← Back
+            </button>
+            <h1 className="text-xl font-bold">New tournament</h1>
+          </div>
           <PadelTournamentBuilder
             tournaments={tournaments}
             setTournaments={setTournaments}
@@ -270,7 +322,7 @@ function TournamentCard({ tournament }: { tournament: any }) {
   const date = tournament.startDate
     ? new Date(tournament.startDate).toLocaleDateString("en-GB")
     : null;
-  const formatLabel = tournament.format === "AM" ? "Americano" : "Mexicano";
+  const formatLabel = tournament.format === "AM" ? "Americano" : tournament.format === "MX" ? "Mexicano" : "Classic";
   const playerCount = tournament.players?.length ?? 0;
   const matches = tournament.matchScores ?? [];
   const played = matches.filter((m: any) => m.locked).length;

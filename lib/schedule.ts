@@ -6,9 +6,76 @@ function shuffle<T>(arr: T[]): T[] {
   return arr;
 }
 
-// Base circle-method generator. Supports any N >= 4 (even or odd).
-// Odd N gets a null bye slot so the circle stays intact.
-function baseCircleRounds(players: any[]): any[] {
+// ── Balanced Americano (power-of-2 sizes) ─────────────────────────────
+// For N = 2^k, uses the affine geometry 1-factorization over GF(2)^k
+// with carefully-chosen match groupings. Guarantees:
+//   • Every pair partners exactly once
+//   • Every pair faces each other exactly 2× as rivals
+// Proven correct for N = 8; N = 4 is trivially correct.
+// ──────────────────────────────────────────────────────────────────────
+function generateBalancedPowerOfTwo(players: any[]): any[] {
+  const N = players.length;
+  const rounds: any[] = [];
+
+  if (N === 4) {
+    // 3 rounds, 2 pairs each → 1 trivial match per round
+    for (let dir = 1; dir <= 3; dir++) {
+      const used = new Set<number>();
+      const pairs: any[][] = [];
+      for (let v = 0; v < 4; v++) {
+        if (used.has(v)) continue;
+        const w = v ^ dir;
+        if (used.has(w)) continue;
+        pairs.push([players[v], players[w]]);
+        used.add(v);
+        used.add(w);
+      }
+      rounds.push([{ teams: [pairs[0], pairs[1]] }]);
+    }
+    return rounds;
+  }
+
+  if (N === 8) {
+    // Verified-perfect grouping for N=8 (affine 1-factorization + match groupings)
+    // directions 1..7 produce the 7 rounds of partnerships
+    const groupingPattern = [0, 2, 2, 2, 0, 1, 0];
+    const groupings: [number, number][][][] = [
+      [[[0, 1], [2, 3]], [[0, 2], [1, 3]], [[0, 3], [1, 2]]],
+    ];
+
+    for (let d = 0; d < 7; d++) {
+      const dir = d + 1;
+      const used = new Set<number>();
+      const pairs: any[][] = [];
+      for (let v = 0; v < 8; v++) {
+        if (used.has(v)) continue;
+        const w = v ^ dir;
+        if (used.has(w)) continue;
+        pairs.push([players[v], players[w]]);
+        used.add(v);
+        used.add(w);
+      }
+
+      const g = groupingPattern[d];
+      const pattern = groupings[0][g];
+      const round: any[] = [];
+      for (const [i, j] of pattern) {
+        round.push({ teams: [pairs[i], pairs[j]] });
+      }
+      rounds.push(shuffle(round));
+    }
+    return rounds;
+  }
+
+  // For 16, 32 … (not yet verified) — fall through to generic circle method
+  return [];
+}
+
+// ── Classic circle-method Americano ──────────────────────────────────
+// Works for any N >= 4. Guarantees every partnership once, but rival
+// counts are only approximately balanced (not exact for every pair).
+// ──────────────────────────────────────────────────────────────────────
+function generateCircleAmericano(players: any[]): any[] {
   const N = players.length;
   if (N < 4) throw new Error("Minimum 4 players required");
 
@@ -22,7 +89,6 @@ function baseCircleRounds(players: any[]): any[] {
   for (let r = 0; r < M - 1; r++) {
     const rotated = [fixed, ...rotating.slice(r).concat(rotating.slice(0, r))];
 
-    // Pair opposite positions in the circle
     const pairs: any[][] = [];
     for (let i = 0; i < M / 2; i++) {
       const p1 = rotated[i];
@@ -32,7 +98,6 @@ function baseCircleRounds(players: any[]): any[] {
       }
     }
 
-    // Consecutive pairs become rivals (2 pairs per match)
     const round: any[] = [];
     for (let i = 0; i + 1 < pairs.length; i += 2) {
       round.push({ teams: [pairs[i], pairs[i + 1]] });
@@ -44,10 +109,15 @@ function baseCircleRounds(players: any[]): any[] {
   return rounds;
 }
 
-// Classic Americano schedule for any N >= 4 (even or odd).
-// Uses the circle method. Odd counts get a rotating bye.
+// ── Public entry point ───────────────────────────────────────────────
 export function generateAmericano(players: any[]): any[] {
-  return baseCircleRounds(players);
+  const N = players.length;
+  // Use the exact-balanced algorithm for known power-of-2 sizes
+  if (N === 4 || N === 8) {
+    return generateBalancedPowerOfTwo(players);
+  }
+  // For everything else (6, 10, odd counts, etc.) use the classic circle method
+  return generateCircleAmericano(players);
 }
 
 // Backward-compatible alias
@@ -90,7 +160,6 @@ export function generateMexicanoRound1(players: any[]): any[] {
 }
 
 // Subsequent rounds: players already sorted by cumulative pts (desc).
-// Same grouping: rank0&rank2 vs rank1&rank3 per court.
 export function generateMexicanoNextRound(rankedPlayers: any[]): any[] {
   const numCourts = Math.floor(rankedPlayers.length / 4);
   const round: any[] = [];

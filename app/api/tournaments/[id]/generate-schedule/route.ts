@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { generateAmericano, generateAmericanoFlex, generateMexicanoRound1, generateGroupRoundRobin } from "@/lib/schedule";
+import { generateAmericano, generateMexicanoRound1, generateGroupRoundRobin } from "@/lib/schedule";
 import { parseTeams, divideIntoGroups } from "@/lib/classic";
 
 export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -69,9 +69,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       let rounds: any[][];
       try {
         if (tournament.format === "AM") {
-          rounds = players.length % 2 !== 0
-            ? generateAmericanoFlex(players)
-            : generateAmericano(players);
+          rounds = generateAmericano(players);
         } else {
           rounds = [generateMexicanoRound1(players)];
         }

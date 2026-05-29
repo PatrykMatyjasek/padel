@@ -6,50 +6,32 @@ function shuffle<T>(arr: T[]): T[] {
   return arr;
 }
 
-export function generateAmericano(players: any[]): any[] {
-  const N = players.length;
-  if (N % 2 !== 0 || N < 4) throw new Error("Player count must be even and >= 4");
-
-  const rounds: any[] = [];
-  const fixed = players[0];
-  const rotating = players.slice(1);
-
-  const numRounds = N - 1;
-
-  for (let r = 0; r < numRounds; r++) {
-    const round: any[] = [];
-    const pairings: any[] = [];
-
-    const rotated = [fixed, ...rotating.slice(r).concat(rotating.slice(0, r))];
-
-    for (let i = 0; i < N / 2; i++) {
-      const p1 = rotated[i];
-      const p2 = rotated[N - 1 - i];
-      pairings.push([p1, p2]);
+// Build one round from a rotated player list, skipping nulls.
+// Returns the round array (may be empty if not enough valid pairs).
+function buildRound(rotated: (any | null)[]): any[] {
+  const pairs: any[][] = [];
+  for (let i = 0; i < rotated.length / 2; i++) {
+    const p1 = rotated[i];
+    const p2 = rotated[rotated.length - 1 - i];
+    if (p1 !== null && p2 !== null) {
+      pairs.push([p1, p2]);
     }
-
-    // combine pairs into matches (2 pairs per match)
-    for (let i = 0; i < pairings.length; i += 2) {
-      if (i + 1 < pairings.length) {
-        round.push({ teams: [pairings[i], pairings[i + 1]] });
-      }
-    }
-
-    rounds.push(shuffle(round));
   }
 
-  return rounds;
+  // Group consecutive pairs into matches (2 pairs → 1 match)
+  const round: any[] = [];
+  for (let i = 0; i + 1 < pairs.length; i += 2) {
+    round.push({ teams: [pairs[i], pairs[i + 1]] });
+  }
+  return round;
 }
 
-// Handles any N >= 4, including odd counts.
-// Odd N gets a null "bye" slot appended so the circle method stays intact.
-// Any pair that includes the bye slot is skipped — those players sit that round out.
-// Each player ends up with exactly one solo bye (paired with null) across all rounds.
-export function generateAmericanoFlex(players: any[]): any[] {
+// Generate base rounds using the circle method.
+// Supports both even and odd counts (odd uses a null bye slot).
+function baseAmericanoRounds(players: any[]): any[] {
   const N = players.length;
   if (N < 4) throw new Error("Minimum 4 players required");
 
-  // Pad to even with a null bye slot if needed
   const list: (any | null)[] = N % 2 === 0 ? [...players] : [...players, null];
   const M = list.length;
 
@@ -59,27 +41,34 @@ export function generateAmericanoFlex(players: any[]): any[] {
 
   for (let r = 0; r < M - 1; r++) {
     const rotated = [fixed, ...rotating.slice(r).concat(rotating.slice(0, r))];
-
-    // Build pairs for this round, skipping any that involve the bye slot
-    const pairs: any[][] = [];
-    for (let i = 0; i < M / 2; i++) {
-      const p1 = rotated[i];
-      const p2 = rotated[M - 1 - i];
-      if (p1 !== null && p2 !== null) {
-        pairs.push([p1, p2]);
-      }
-    }
-
-    // Group consecutive pairs into matches (2 pairs → 1 match, leftover pair = bye)
-    const round: any[] = [];
-    for (let i = 0; i + 1 < pairs.length; i += 2) {
-      round.push({ teams: [pairs[i], pairs[i + 1]] });
-    }
-
+    const round = buildRound(rotated);
     if (round.length > 0) rounds.push(shuffle(round));
   }
 
   return rounds;
+}
+
+// Americano: circle method + double round-robin.
+// Each player partners with every other player twice across all rounds.
+export function generateAmericano(players: any[]): any[] {
+  if (players.length < 4) throw new Error("Minimum 4 players required");
+
+  const rounds = baseAmericanoRounds(players);
+
+  // Second leg: swap order so pairings repeat in a different order
+  // (mirror home/away for each match)
+  const secondLeg = rounds.map((round: any[]) =>
+    round.map((match: any) => ({
+      teams: match.teams.slice().reverse(),
+    }))
+  );
+
+  return [...rounds, ...secondLeg];
+}
+
+// Alias for backward compatibility — flex now uses the unified generator.
+export function generateAmericanoFlex(players: any[]): any[] {
+  return generateAmericano(players);
 }
 
 // Classic: round-robin for fixed teams within a group.
@@ -127,4 +116,3 @@ export function generateMexicanoNextRound(rankedPlayers: any[]): any[] {
   }
   return round;
 }
-

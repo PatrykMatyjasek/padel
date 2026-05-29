@@ -6,29 +6,9 @@ function shuffle<T>(arr: T[]): T[] {
   return arr;
 }
 
-// Build one round from a rotated player list, skipping nulls.
-// Returns the round array (may be empty if not enough valid pairs).
-function buildRound(rotated: (any | null)[]): any[] {
-  const pairs: any[][] = [];
-  for (let i = 0; i < rotated.length / 2; i++) {
-    const p1 = rotated[i];
-    const p2 = rotated[rotated.length - 1 - i];
-    if (p1 !== null && p2 !== null) {
-      pairs.push([p1, p2]);
-    }
-  }
-
-  // Group consecutive pairs into matches (2 pairs → 1 match)
-  const round: any[] = [];
-  for (let i = 0; i + 1 < pairs.length; i += 2) {
-    round.push({ teams: [pairs[i], pairs[i + 1]] });
-  }
-  return round;
-}
-
-// Generate base rounds using the circle method.
-// Supports both even and odd counts (odd uses a null bye slot).
-function baseAmericanoRounds(players: any[]): any[] {
+// Base circle-method generator. Supports any N >= 4 (even or odd).
+// Odd N gets a null bye slot so the circle stays intact.
+function baseCircleRounds(players: any[]): any[] {
   const N = players.length;
   if (N < 4) throw new Error("Minimum 4 players required");
 
@@ -41,32 +21,36 @@ function baseAmericanoRounds(players: any[]): any[] {
 
   for (let r = 0; r < M - 1; r++) {
     const rotated = [fixed, ...rotating.slice(r).concat(rotating.slice(0, r))];
-    const round = buildRound(rotated);
+
+    // Pair opposite positions in the circle
+    const pairs: any[][] = [];
+    for (let i = 0; i < M / 2; i++) {
+      const p1 = rotated[i];
+      const p2 = rotated[M - 1 - i];
+      if (p1 !== null && p2 !== null) {
+        pairs.push([p1, p2]);
+      }
+    }
+
+    // Consecutive pairs become rivals (2 pairs per match)
+    const round: any[] = [];
+    for (let i = 0; i + 1 < pairs.length; i += 2) {
+      round.push({ teams: [pairs[i], pairs[i + 1]] });
+    }
+
     if (round.length > 0) rounds.push(shuffle(round));
   }
 
   return rounds;
 }
 
-// Americano: circle method + double round-robin.
-// Each player partners with every other player twice across all rounds.
+// Classic Americano schedule for any N >= 4 (even or odd).
+// Uses the circle method. Odd counts get a rotating bye.
 export function generateAmericano(players: any[]): any[] {
-  if (players.length < 4) throw new Error("Minimum 4 players required");
-
-  const rounds = baseAmericanoRounds(players);
-
-  // Second leg: swap order so pairings repeat in a different order
-  // (mirror home/away for each match)
-  const secondLeg = rounds.map((round: any[]) =>
-    round.map((match: any) => ({
-      teams: match.teams.slice().reverse(),
-    }))
-  );
-
-  return [...rounds, ...secondLeg];
+  return baseCircleRounds(players);
 }
 
-// Alias for backward compatibility — flex now uses the unified generator.
+// Backward-compatible alias
 export function generateAmericanoFlex(players: any[]): any[] {
   return generateAmericano(players);
 }

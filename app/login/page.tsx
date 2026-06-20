@@ -65,6 +65,9 @@ export default function LoginPage() {
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? "Signing in…" : "Sign in"}
         </Button>
+        <p className="text-xs text-muted-foreground text-center">
+          By signing in, you agree to our <Link href="/terms">Terms</Link> and <Link href="/privacy">Privacy</Link>.
+        </p>
       </form>
     </div>
   );

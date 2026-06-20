@@ -11,6 +11,7 @@ export default function RegisterPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -21,7 +22,7 @@ export default function RegisterPage() {
     const res = await fetch("/api/auth/register", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name, email, password }),
+      body: JSON.stringify({ name, email, password, acceptTerms }),
     });
     if (!res.ok) {
       const data = await res.json();
@@ -80,6 +81,28 @@ export default function RegisterPage() {
             onChange={(e) => setPassword(e.target.value)}
           />
           <p className="text-xs text-muted-foreground">At least 6 characters</p>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          By registering, you agree to our{" "}
+          <Link href="/terms" className="underline hover:text-primary">Terms of Service</Link>
+          {" "}and{" "}
+          <Link href="/privacy" className="underline hover:text-primary">Privacy Policy</Link>.
+        </p>
+        <div className="flex items-start gap-2">
+          <input
+            id="accept-terms"
+            type="checkbox"
+            required
+            checked={acceptTerms}
+            onChange={(e) => setAcceptTerms(e.target.checked)}
+            className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+          />
+          <label htmlFor="accept-terms" className="text-sm leading-tight">
+            I have read and accept the{" "}
+            <Link href="/terms" className="underline hover:text-primary">Terms of Service</Link>
+            {" "}and acknowledge the{" "}
+            <Link href="/privacy" className="underline hover:text-primary">Privacy Policy</Link>.
+          </label>
         </div>
         {error && <p className="text-sm text-destructive">{error}</p>}
         <Button type="submit" className="w-full" disabled={loading}>

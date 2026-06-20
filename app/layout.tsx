@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Link from "next/link";
 import "./globals.css";
 import SessionProvider from "@/components/SessionProvider";
 import Header from "@/components/Header";
@@ -57,6 +58,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </main>
           <FeedbackWidget />
           <footer className="border-t mt-16 py-6 text-center text-xs text-muted-foreground space-y-2">
+            <p>
+              <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
+              <span className="mx-1">·</span>
+              <Link href="/terms" className="hover:text-foreground transition-colors">Terms</Link>
+              <span className="mx-1">·</span>
+              <Link href="/cookies" className="hover:text-foreground transition-colors">Cookies</Link>
+            </p>
             <p>
               Built by{" "}
               <a

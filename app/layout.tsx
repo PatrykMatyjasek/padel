@@ -9,9 +9,40 @@ import FeedbackWidget from "@/components/FeedbackWidget";
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
+const siteUrl =
+  process.env.NEXT_PUBLIC_SITE_URL ||
+  (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+
 export const metadata: Metadata = {
-  title: "Padel Manager",
-  description: "Manage padel tournaments",
+  title: {
+    template: "%s | Padel Manager",
+    default: "Padel Manager — Create & Track Padel Tournaments",
+  },
+  description:
+    "Create, manage and share padel tournaments with friends. Americano, Mexicano and Classic formats.",
+  keywords: [
+    "padel",
+    "tournament",
+    "padel tournament",
+    "americano",
+    "mexicano",
+    "padel manager",
+  ],
+  authors: [{ name: "Patryk Matyjasek", url: "https://fredsonthecode.pl" }],
+  metadataBase: new URL(siteUrl),
+  openGraph: {
+    type: "website",
+    siteName: "Padel Manager",
+    title: "Padel Manager — Create & Track Padel Tournaments",
+    description:
+      "Create, manage and share padel tournaments with friends. Americano, Mexicano and Classic formats.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Padel Manager",
+    description: "Create & Track Padel Tournaments",
+  },
+  alternates: { canonical: "/" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

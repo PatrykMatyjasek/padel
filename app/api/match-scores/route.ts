@@ -9,7 +9,7 @@ export async function GET(req: Request) {
     }
     const matches = await prisma.matchScore.findMany({
       where: { tournamentId },
-      include: { homeTeam: true, awayTeam: true },
+      include: { homeTeam: true, awayTeam: true, matchSets: { orderBy: { setIndex: "asc" } } },
     });
     return Response.json(matches);
   } catch {

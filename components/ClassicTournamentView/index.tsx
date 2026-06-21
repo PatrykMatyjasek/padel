@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   parseTeams, divideIntoGroups, computeGroupStandings,
-  parseSets, setsWon, matchWinner, teamLabel,
+  parseSets, matchSetsToSetScores, setsWon, matchWinner, teamLabel,
   type GroupStanding, type SetScore,
 } from "@/lib/classic";
 
@@ -187,7 +187,9 @@ function ClassicMatchRow({
 
   const homeName = teamLabel(match.homeTeam?.map((p: any) => p.name) ?? []);
   const awayName = teamLabel(match.awayTeam?.map((p: any) => p.name) ?? []);
-  const sets = parseSets(match.setsJson);
+  const sets = match.matchSets?.length > 0
+    ? matchSetsToSetScores(match.matchSets)
+    : parseSets(match.setsJson);
   const locked = !!match.locked;
   const [hSets, aSets] = locked ? setsWon(sets) : [0, 0];
 
@@ -314,7 +316,11 @@ export default function ClassicTournamentView({
 }: ClassicTournamentViewProps) {
   const [activeTab, setActiveTab] = useState<"groups" | "knockout">("groups");
 
-  const rawTeams = parseTeams(tournament.teamsJson);
+  const idToName = new Map<string, string>(
+    (tournament.players ?? []).map((p: any) => [p.id, p.name])
+  );
+  const rawTeams = parseTeams(tournament.teamsJson)
+    .map((ids: string[]) => ids.map((id: string) => idToName.get(id) ?? id));
   const numGroups = tournament.numGroups ?? 1;
   const advancePerGroup = tournament.advancePerGroup ?? 2;
   const groups = divideIntoGroups(rawTeams, numGroups);
@@ -344,7 +350,9 @@ export default function ClassicTournamentView({
   // Winner from final
   const finalMatch = knockoutMatches.find(m => m.bracketRound === "F");
   const finalScore = finalMatch ? scores[finalMatch.id] : null;
-  const finalSets = parseSets(finalScore?.setsJson ?? finalMatch?.setsJson ?? null);
+  const finalSets = finalMatch?.matchSets?.length > 0
+    ? matchSetsToSetScores(finalMatch.matchSets)
+    : parseSets(finalScore?.setsJson ?? finalMatch?.setsJson ?? null);
   const finalWinner = finalMatch && finalSets.length > 0 ? matchWinner(finalSets, tournament.setsToWin ?? 2) : null;
   const winnerTeam = finalWinner === 0 ? finalMatch?.homeTeam?.map((p: any) => p.name) : finalWinner === 1 ? finalMatch?.awayTeam?.map((p: any) => p.name) : null;
 
@@ -364,6 +372,7 @@ export default function ClassicTournamentView({
   const enrichedMatch = (m: any) => ({
     ...m,
     setsJson: scores[m.id]?.setsJson ?? m.setsJson,
+    matchSets: m.matchSets ?? [],
     locked: scores[m.id]?.locked ?? m.locked,
   });
 

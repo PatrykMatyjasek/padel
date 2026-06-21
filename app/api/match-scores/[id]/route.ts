@@ -6,21 +6,35 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const { id } = await params;
     const body = await req.json();
 
-    let data: any;
-
     if (body.setsJson !== undefined) {
-      // Tennis scoring (Classic format)
       const sets = parseSets(body.setsJson);
       const [homeScore, awayScore] = setsWon(sets);
-      data = { setsJson: body.setsJson, homeScore, awayScore, locked: true };
-    } else {
-      data = { homeScore: body.homeScore, awayScore: body.awayScore, locked: true };
+
+      const [updated] = await prisma.$transaction([
+        prisma.matchScore.update({
+          where: { id },
+          data: { setsJson: body.setsJson, homeScore, awayScore, locked: true },
+          include: { homeTeam: true, awayTeam: true, matchSets: { orderBy: { setIndex: "asc" } } },
+        }),
+        prisma.matchSet.deleteMany({ where: { matchId: id } }),
+        prisma.matchSet.createMany({
+          data: sets.map(([homeGames, awayGames, homeTb, awayTb], setIndex) => ({
+            matchId: id,
+            setIndex,
+            homeGames,
+            awayGames,
+            homeTb: homeTb ?? null,
+            awayTb: awayTb ?? null,
+          })),
+        }),
+      ]);
+      return Response.json(updated);
     }
 
     const updated = await prisma.matchScore.update({
       where: { id },
-      data,
-      include: { homeTeam: true, awayTeam: true },
+      data: { homeScore: body.homeScore, awayScore: body.awayScore, locked: true },
+      include: { homeTeam: true, awayTeam: true, matchSets: { orderBy: { setIndex: "asc" } } },
     });
     return Response.json(updated);
   } catch (err: any) {

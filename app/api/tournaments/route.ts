@@ -56,6 +56,17 @@ export async function POST(req: Request) {
       }
     }
 
+    // Convert team name-pairs → ID-pairs so teamsJson stores stable IDs
+    let teamsJson: string | null = null;
+    if (body.teamsJson) {
+      const nameToId = new Map<string, string>();
+      playerNames.forEach((name, i) => { if (playerConnects[i]) nameToId.set(name, playerConnects[i].id); });
+      const teamsByIds = (JSON.parse(body.teamsJson) as string[][])
+        .map(names => names.map(n => nameToId.get(n)).filter(Boolean) as string[])
+        .filter(ids => ids.length === 2);
+      teamsJson = JSON.stringify(teamsByIds);
+    }
+
     const tournament = await prisma.tournament.create({
       data: {
         name: body.name,
@@ -68,7 +79,7 @@ export async function POST(req: Request) {
         advancePerGroup: body.advancePerGroup ? Number(body.advancePerGroup) : null,
         setsToWin: body.setsToWin ? Number(body.setsToWin) : null,
         consolationBracket: body.consolationBracket === true,
-        teamsJson: body.teamsJson ?? null,
+        teamsJson,
         startDate: body.startDate ? new Date(body.startDate) : new Date(),
         shareToken: crypto.randomUUID(),
         userId,

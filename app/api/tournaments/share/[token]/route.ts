@@ -7,7 +7,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ token: s
     include: {
       players: true,
       matchScores: {
-        include: { homeTeam: true, awayTeam: true },
+        include: { homeTeam: true, awayTeam: true, matchSets: { orderBy: { setIndex: "asc" } } },
         orderBy: { createdAt: "asc" },
       },
     },

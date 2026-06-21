@@ -32,14 +32,14 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     const created: any[] = [];
 
     if (tournament.format === "CL") {
-      // Classic: fixed-team group round-robin
-      const rawTeams = parseTeams((tournament as any).teamsJson);
+      const idToName = new Map(players.map((p: any) => [p.id, p.name]));
+      const rawTeams = parseTeams((tournament as any).teamsJson)
+        .map((ids: string[]) => ids.map(id => idToName.get(id) ?? id));
       if (rawTeams.length < 2) return Response.json({ error: "No teams defined" }, { status: 400 });
       const numGroups = (tournament as any).numGroups ?? 1;
       const groups = divideIntoGroups(rawTeams, numGroups);
 
       for (const group of groups) {
-        // Map team name-pairs to player objects
         const teamObjects = group.teams.map((names: string[]) =>
           names.map((name: string) => players.find((p: any) => p.name === name)).filter(Boolean)
         ).filter((t: any[]) => t.length === 2);

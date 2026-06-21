@@ -21,6 +21,20 @@ export function parseSets(setsJson: string | null | undefined): SetScore[] {
   try { return JSON.parse(setsJson); } catch { return []; }
 }
 
+export function matchSetsToSetScores(matchSets: any[]): SetScore[] {
+  return [...matchSets]
+    .sort((a, b) => a.setIndex - b.setIndex)
+    .map(s => s.homeTb != null && s.awayTb != null
+      ? [s.homeGames, s.awayGames, s.homeTb, s.awayTb]
+      : [s.homeGames, s.awayGames]
+    );
+}
+
+function getSets(m: any): SetScore[] {
+  if (m.matchSets?.length > 0) return matchSetsToSetScores(m.matchSets);
+  return parseSets(m.setsJson);
+}
+
 export function setsWon(sets: SetScore[]): [number, number] {
   return sets.reduce<[number, number]>(
     ([h, a], [hg, ag]) => hg > ag ? [h + 1, a] : ag > hg ? [h, a + 1] : [h, a],
@@ -67,8 +81,9 @@ export function computeGroupStandings(
   standings.forEach((s, i) => byName.set(s.names[0], i));
 
   for (const m of matches) {
-    if (!m.locked || !m.setsJson) continue;
-    const sets = parseSets(m.setsJson);
+    if (!m.locked) continue;
+    const sets = getSets(m);
+    if (sets.length === 0) continue;
     const [hSets, aSets] = setsWon(sets);
     const hGames = sets.reduce((s, [h]) => s + h, 0);
     const aGames = sets.reduce((s, [, a]) => s + a, 0);

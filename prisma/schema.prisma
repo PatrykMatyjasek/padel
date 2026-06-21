@@ -87,6 +87,20 @@ model MatchScore {
   groupName    String?
   bracketRound String?
   bracketSlot  Int?
+  matchSets    MatchSet[]
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
+}
+
+model MatchSet {
+  id        String     @id @default(cuid())
+  matchId   String
+  match     MatchScore @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  setIndex  Int
+  homeGames Int
+  awayGames Int
+  homeTb    Int?
+  awayTb    Int?
+
+  @@unique([matchId, setIndex])
 }

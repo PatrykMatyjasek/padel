@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import {
   parseTeams, divideIntoGroups, computeGroupStandings,
   buildKnockoutPairings, bracketRoundLabel, nextBracketRound,
-  parseSets, setsWon,
+  parseSets, setsWon, matchSetsToSetScores,
 } from "@/lib/classic";
 
 const WINNER_ROUNDS = ["QF", "SF", "F"];
@@ -15,7 +15,7 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
 
     const tournament = await prisma.tournament.findUnique({
       where: { id },
-      include: { players: true, matchScores: { include: { homeTeam: true, awayTeam: true } } },
+      include: { players: true, matchScores: { include: { homeTeam: true, awayTeam: true, matchSets: { orderBy: { setIndex: "asc" } } } } },
     });
 
     if (!tournament) return Response.json({ error: "Tournament not found" }, { status: 404 });
@@ -30,7 +30,9 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
       const allGroupLocked = groupMatches.length > 0 && groupMatches.every(m => m.locked);
       if (!allGroupLocked) return Response.json({ error: "Complete all group matches first" }, { status: 400 });
 
-      const rawTeams = parseTeams((tournament as any).teamsJson);
+      const idToName = new Map(tournament.players.map(p => [p.id, p.name]));
+      const rawTeams = parseTeams((tournament as any).teamsJson)
+        .map(ids => ids.map(id => idToName.get(id) ?? id));
       const numGroups = (tournament as any).numGroups ?? 1;
       const advancePerGroup = (tournament as any).advancePerGroup ?? 2;
       const groups = divideIntoGroups(rawTeams, numGroups);
@@ -163,8 +165,10 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
 }
 
 function resolveWinner(match: any, setsToWin = 2): any[] | null {
-  if (!match.setsJson) return null;
-  const sets = parseSets(match.setsJson);
+  const sets = match.matchSets?.length > 0
+    ? matchSetsToSetScores(match.matchSets)
+    : parseSets(match.setsJson);
+  if (sets.length === 0) return null;
   const [h, a] = setsWon(sets);
   if (h >= setsToWin) return match.homeTeam;
   if (a >= setsToWin) return match.awayTeam;

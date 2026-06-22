@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
-import Script from "next/script";
 import "./globals.css";
 import SessionProvider from "@/components/SessionProvider";
+import CookieConsent from "@/components/CookieConsent";
 import Header from "@/components/Header";
 import PageTracker from "@/components/PageTracker";
 import FeedbackWidget from "@/components/FeedbackWidget";
@@ -50,28 +50,8 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <head>
-        <Script
-          id="gtm-script"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: `(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-})(window,document,'script','dataLayer','GTM-NXGR8BPM');`,
-          }}
-        />
-      </head>
+
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground min-h-screen`}>
-        <noscript>
-          <iframe
-            src="https://www.googletagmanager.com/ns.html?id=GTM-NXGR8BPM"
-            height="0"
-            width="0"
-            style={{ display: "none", visibility: "hidden" }}
-          />
-        </noscript>
         <SessionProvider>
           <Header />
           <PageTracker />
@@ -79,6 +59,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
             {children}
           </main>
           <FeedbackWidget />
+          <CookieConsent />
           <footer className="border-t mt-16 py-6 text-center text-xs text-muted-foreground space-y-2">
             <p>
               <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>

@@ -1,6 +1,6 @@
 # ADR-001: Statistics computation strategy
 
-**Status**: Proposed  
+**Status**: Implemented  
 **Date**: 2026-06-20
 
 ---

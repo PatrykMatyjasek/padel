@@ -16,6 +16,7 @@ model User {
   updatedAt   DateTime     @updatedAt
   tournaments Tournament[]
   players     Player[]
+  series      Series[]
 }
 
 model Tournament {
@@ -41,6 +42,8 @@ model Tournament {
   players        Player[]     @relation("TournamentPlayers")
   matchScores    MatchScore[]
   playerStats    PlayerStat[]
+  seriesId    String?
+  series      Series?      @relation(fields: [seriesId], references: [id], onDelete: SetNull)
 }
 
 model Player {
@@ -126,4 +129,19 @@ model PlayerStat {
   @@unique([playerId, tournamentId])
   @@index([tournamentId])
   @@index([playerId])
+}
+
+model Series {
+  id          String       @id @default(cuid())
+  name        String
+  description String?
+  pointsRule  String       @default("all") // "all" | "top_n" | "drop_worst"
+  topN        Int?
+  dropWorst   Int?
+  shareToken  String?      @unique
+  userId      String
+  user        User         @relation(fields: [userId], references: [id])
+  tournaments Tournament[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 }

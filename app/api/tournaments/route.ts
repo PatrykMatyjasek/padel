@@ -14,6 +14,7 @@ export async function GET() {
         matchScores: {
           select: { id: true, homeScore: true, awayScore: true, locked: true },
         },
+        series: { select: { id: true, name: true } },
       },
       orderBy: { createdAt: "desc" },
     });

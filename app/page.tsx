@@ -6,7 +6,7 @@ import PadelTournamentBuilder from "@/components/PadelTournamentBuilder";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
-type Tab = "tournaments" | "players" | "stats" | "new";
+type Tab = "tournaments" | "players" | "series" | "stats" | "new";
 type StatsFormat = "all" | "AM" | "MX" | "CL";
 
 const MEDALS = ["🥇", "🥈", "🥉"];
@@ -14,6 +14,10 @@ const MEDALS = ["🥇", "🥈", "🥉"];
 export default function HomePage() {
   const { data: session } = useSession();
   const [tab, setTab] = useState<Tab>("tournaments");
+  const [seriesList, setSeriesList] = useState<any[]>([]);
+  const [showSeriesForm, setShowSeriesForm] = useState(false);
+  const [seriesForm, setSeriesForm] = useState({ name: "", description: "", pointsRule: "all", topN: "", dropWorst: "" });
+  const [creatingSeries, setCreatingSeries] = useState(false);
   const [tournaments, setTournaments] = useState<any[]>([]);
   const [players, setPlayers] = useState<any[]>([]);
   const [playerName, setPlayerName] = useState("");
@@ -29,6 +33,9 @@ export default function HomePage() {
     }
     if (tab === "stats" && session) {
       fetch("/api/stats").then((r) => r.json()).then(setStats);
+    }
+    if (tab === "series" && session) {
+      fetch("/api/series").then((r) => r.json()).then(setSeriesList);
     }
   }, [tab, session]);
 
@@ -55,6 +62,7 @@ export default function HomePage() {
   const tabs: { id: Tab; label: string }[] = [
     { id: "tournaments", label: "Tournaments" },
     { id: "players", label: "Players" },
+    ...(session ? [{ id: "series" as Tab, label: "Series" }] : []),
     ...(session ? [{ id: "stats" as Tab, label: "Statistics" }] : []),
   ];
 
@@ -114,6 +122,118 @@ export default function HomePage() {
               {tournaments.map((t) => (
                 <TournamentCard key={t.id} tournament={t} />
               ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      {/* Series */}
+      {tab === "series" && session && (
+        <section className="space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <h1 className="text-xl font-bold">Series</h1>
+            <Button size="sm" className="shrink-0" onClick={() => setShowSeriesForm(true)}>
+              + Create series
+            </Button>
+          </div>
+
+          {showSeriesForm && (
+            <form
+              className="card p-4 space-y-3"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                setCreatingSeries(true);
+                const res = await fetch("/api/series", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    name: seriesForm.name,
+                    description: seriesForm.description || undefined,
+                    pointsRule: seriesForm.pointsRule,
+                    topN: seriesForm.pointsRule === "top_n" && seriesForm.topN ? Number(seriesForm.topN) : undefined,
+                    dropWorst: seriesForm.pointsRule === "drop_worst" && seriesForm.dropWorst ? Number(seriesForm.dropWorst) : undefined,
+                  }),
+                });
+                if (res.ok) {
+                  const created = await res.json();
+                  setSeriesList((prev) => [created, ...prev]);
+                  setShowSeriesForm(false);
+                  setSeriesForm({ name: "", description: "", pointsRule: "all", topN: "", dropWorst: "" });
+                }
+                setCreatingSeries(false);
+              }}
+            >
+              <div className="flex gap-2 items-start">
+                <div className="flex-1 space-y-3">
+                  <input
+                    required
+                    type="text"
+                    placeholder="Series name"
+                    className="border rounded-md px-3 py-2 text-sm w-full bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                    value={seriesForm.name}
+                    onChange={(e) => setSeriesForm((f) => ({ ...f, name: e.target.value }))}
+                  />
+                  <textarea
+                    placeholder="Description (optional)"
+                    className="border rounded-md px-3 py-2 text-sm w-full bg-background focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+                    rows={2}
+                    value={seriesForm.description}
+                    onChange={(e) => setSeriesForm((f) => ({ ...f, description: e.target.value }))}
+                  />
+                  <div className="flex gap-2 flex-wrap">
+                    <select
+                      className="border rounded-md px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                      value={seriesForm.pointsRule}
+                      onChange={(e) => setSeriesForm((f) => ({ ...f, pointsRule: e.target.value }))}
+                    >
+                      <option value="all">All points</option>
+                      <option value="top_n">Top N</option>
+                      <option value="drop_worst">Drop worst</option>
+                    </select>
+                    {seriesForm.pointsRule === "top_n" && (
+                      <input
+                        type="number"
+                        min="1"
+                        placeholder="Top N"
+                        className="border rounded-md px-3 py-2 text-sm w-20 bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                        value={seriesForm.topN}
+                        onChange={(e) => setSeriesForm((f) => ({ ...f, topN: e.target.value }))}
+                      />
+                    )}
+                    {seriesForm.pointsRule === "drop_worst" && (
+                      <input
+                        type="number"
+                        min="1"
+                        placeholder="Drop worst"
+                        className="border rounded-md px-3 py-2 text-sm w-20 bg-background focus:outline-none focus:ring-2 focus:ring-ring"
+                        value={seriesForm.dropWorst}
+                        onChange={(e) => setSeriesForm((f) => ({ ...f, dropWorst: e.target.value }))}
+                      />
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-col gap-2 shrink-0">
+                  <Button type="submit" size="sm" disabled={creatingSeries}>
+                    {creatingSeries ? "Creating…" : "Create"}
+                  </Button>
+                  <Button type="button" variant="ghost" size="sm" onClick={() => setShowSeriesForm(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </form>
+          )}
+
+          {seriesList.length === 0 ? (
+            <div className="card p-10 text-center space-y-4">
+              <p className="font-medium text-muted-foreground">No series yet</p>
+              <Button size="lg" className="w-full sm:w-auto" onClick={() => setShowSeriesForm(true)}>
+                + Create your first series
+              </Button>
+            </div>
+          ) : (
+            <div className="grid gap-3">
+              {seriesList.map((s) => <SeriesCard key={s.id} series={s} />)}
             </div>
           )}
         </section>
@@ -326,6 +446,28 @@ function StatCard({ label, value }: { label: string; value: number }) {
   );
 }
 
+function SeriesCard({ series }: { series: any }) {
+  const ruleLabel = series.pointsRule === "all" ? "All points"
+    : series.pointsRule === "top_n" ? `Top ${series.topN}`
+    : `Drop worst ${series.dropWorst}`;
+
+  return (
+    <Link href={`/series/${series.id}`} className="block">
+      <div className="card p-4 flex flex-col gap-3 hover:shadow-md transition-shadow min-h-[100px]">
+        <div className="flex items-start justify-between">
+          <span className="font-semibold truncate">{series.name}</span>
+          <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full shrink-0 ml-2">{ruleLabel}</span>
+        </div>
+        {series.description && <p className="text-sm text-muted-foreground line-clamp-2">{series.description}</p>}
+        <p className="text-sm text-muted-foreground">{series._count.tournaments} {series._count.tournaments === 1 ? "tournament" : "tournaments"}</p>
+        <div className="flex justify-end mt-auto">
+          <span className="text-sm text-primary font-medium">Details →</span>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
 function TournamentCard({ tournament }: { tournament: any }) {
   const date = tournament.startDate
     ? new Date(tournament.startDate).toLocaleDateString("en-GB")
@@ -346,6 +488,9 @@ function TournamentCard({ tournament }: { tournament: any }) {
   return (
     <Link href={`/tournaments/${tournament.id}`} className="block">
       <div className="card p-4 flex flex-col gap-3 hover:shadow-md transition-shadow min-h-[120px]">
+        {tournament.series && (
+          <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded w-fit">Part of {tournament.series.name}</span>
+        )}
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-semibold truncate">{tournament.name}</span>

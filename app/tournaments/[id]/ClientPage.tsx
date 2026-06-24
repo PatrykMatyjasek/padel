@@ -178,6 +178,12 @@ export default function ClientPage({ id }: { id: string }) {
 
       <TournamentDetails tournament={tournament} />
 
+      {tournament.series && (
+        <p className="text-sm text-muted-foreground">
+          Part of series: <Link href={`/series/${tournament.series.id}`} className="text-primary hover:underline">{tournament.series.name}</Link>
+        </p>
+      )}
+
       {/* Close / Reopen — only for the tournament owner */}
       {session?.user?.id && tournament.userId === session.user.id && (
         <div className="flex justify-end">

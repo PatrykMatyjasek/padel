@@ -44,9 +44,23 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     if (!tournament) return Response.json({ error: "Not found" }, { status: 404 });
     if (tournament.userId !== session.user.id) return Response.json({ error: "Forbidden" }, { status: 403 });
 
+    // Handle seriesId if provided
+    let seriesId = tournament.seriesId;
+    if (body.seriesId !== undefined) {
+      if (body.seriesId !== null) {
+        const targetSeries = await prisma.series.findUnique({ where: { id: body.seriesId } });
+        if (!targetSeries || targetSeries.userId !== session.user.id) {
+          return Response.json({ error: "Series not found or not yours" }, { status: 400 });
+        }
+        seriesId = body.seriesId;
+      } else {
+        seriesId = null;
+      }
+    }
+
     const updated = await prisma.tournament.update({
       where: { id },
-      data: { isClosed: body.isClosed },
+      data: { isClosed: body.isClosed, seriesId },
     });
 
     // ADR-001: sync PlayerStat snapshot on close/reopen

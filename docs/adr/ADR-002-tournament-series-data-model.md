@@ -1,6 +1,6 @@
 # ADR-002: Tournament series data model
 
-**Status**: Proposed  
+**Status**: Implemented  
 **Date**: 2026-06-20
 
 ---

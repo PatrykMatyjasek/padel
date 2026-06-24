@@ -76,35 +76,31 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     }
   }
 
-  // Tournament wins/podiums from closed tournaments
+  // 1. PlayerStat for closed tournaments (tournamentWins, podiums, tournament history)
   const allTournamentIds = Array.from(tournamentIds);
-  const closedTournaments = await prisma.tournament.findMany({
-    where: { userId: session.user.id, isClosed: true, id: { in: allTournamentIds } },
-    include: {
-      matchScores: { where: { locked: true }, include: { homeTeam: true, awayTeam: true } },
-    },
+  const closedStatRows = await prisma.playerStat.findMany({
+    where: { playerId: id, tournamentId: { in: allTournamentIds } },
+    include: { tournament: true },
   });
 
   let tournamentWins = 0;
   let podiums = 0;
   const tournamentHistory: any[] = [];
-  const closedIds = new Set(closedTournaments.map((t) => t.id));
+  const closedIds = new Set(closedStatRows.map((r) => r.tournamentId));
 
-  for (const t of closedTournaments) {
-    if (t.matchScores.length === 0) continue;
-    const pts: Record<string, number> = {};
-    for (const m of t.matchScores) {
-      m.homeTeam.forEach((p: any) => { pts[p.id] = (pts[p.id] ?? 0) + m.homeScore; });
-      m.awayTeam.forEach((p: any) => { pts[p.id] = (pts[p.id] ?? 0) + m.awayScore; });
-    }
-    const ranked = Object.entries(pts).sort(([, a], [, b]) => b - a).map(([pid]) => pid);
-    const rank = ranked.indexOf(id) + 1;
-    if (rank === 1) tournamentWins++;
-    if (rank >= 1 && rank <= 3) podiums++;
-    tournamentHistory.push({ id: t.id, name: t.name, rank, points: pts[id] ?? 0, isClosed: true });
+  for (const row of closedStatRows) {
+    tournamentHistory.push({
+      id: row.tournament.id,
+      name: row.tournament.name,
+      rank: row.rank,
+      points: row.points,
+      isClosed: true,
+    });
+    if (row.isWinner) tournamentWins++;
+    if (row.isPodium) podiums++;
   }
 
-  // Open tournaments
+  // 2. Open tournaments — on-demand computation
   const openIds = allTournamentIds.filter((tid) => !closedIds.has(tid));
   if (openIds.length > 0) {
     const openTournaments = await prisma.tournament.findMany({
@@ -122,6 +118,11 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       tournamentHistory.push({ id: t.id, name: t.name, rank: null, points: pts[id] ?? 0, isClosed: false });
     }
   }
+
+  const sortedHistory = tournamentHistory.sort((a, b) => {
+    if (a.isClosed !== b.isClosed) return a.isClosed ? -1 : 1;
+    return (a.rank ?? 999) - (b.rank ?? 999);
+  });
 
   const partners = Object.entries(partnerStats)
     .map(([pid, s]) => ({ id: pid, ...s, winRate: s.matches > 0 ? s.wins / s.matches : 0 }))
@@ -144,9 +145,6 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     },
     partners,
     rivals,
-    tournaments: tournamentHistory.sort((a, b) => {
-      if (a.isClosed !== b.isClosed) return a.isClosed ? -1 : 1;
-      return (a.rank ?? 999) - (b.rank ?? 999);
-    }),
+    tournaments: sortedHistory,
   });
 }

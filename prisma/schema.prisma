@@ -40,6 +40,7 @@ model Tournament {
   updatedAt      DateTime     @updatedAt
   players        Player[]     @relation("TournamentPlayers")
   matchScores    MatchScore[]
+  playerStats    PlayerStat[]
 }
 
 model Player {
@@ -52,6 +53,7 @@ model Player {
   tournaments Tournament[] @relation("TournamentPlayers")
   homeMatches MatchScore[] @relation("HomePlayers")
   awayMatches MatchScore[] @relation("AwayPlayers")
+  stats          PlayerStat[]
 }
 
 model Feedback {
@@ -103,4 +105,25 @@ model MatchSet {
   awayTb    Int?
 
   @@unique([matchId, setIndex])
+}
+
+model PlayerStat {
+  id           String     @id @default(cuid())
+  playerId     String
+  tournamentId String
+  format       String
+  points       Int
+  matches      Int
+  wins         Int
+  rank         Int?
+  isWinner     Boolean    @default(false)
+  isPodium     Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+
+  player       Player     @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  tournament   Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  @@unique([playerId, tournamentId])
+  @@index([tournamentId])
+  @@index([playerId])
 }

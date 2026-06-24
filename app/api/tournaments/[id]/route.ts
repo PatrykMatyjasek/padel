@@ -48,6 +48,33 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       where: { id },
       data: { isClosed: body.isClosed },
     });
+
+    // ADR-001: sync PlayerStat snapshot on close/reopen
+    if (body.isClosed === true) {
+      // 1. Delete any stale rows
+      await prisma.playerStat.deleteMany({ where: { tournamentId: id } });
+      // 2. Import and compute
+      const { computeTournamentPlayerStats } = await import("@/lib/player-stats");
+      const stats = await computeTournamentPlayerStats(id);
+      if (stats.length > 0) {
+        await prisma.playerStat.createMany({
+          data: stats.map((s) => ({
+            playerId: s.playerId,
+            tournamentId: id,
+            format: tournament.format,
+            points: s.points,
+            matches: s.matches,
+            wins: s.wins,
+            rank: s.rank,
+            isWinner: s.isWinner,
+            isPodium: s.isPodium,
+          })),
+        });
+      }
+    } else if (body.isClosed === false) {
+      await prisma.playerStat.deleteMany({ where: { tournamentId: id } });
+    }
+
     return Response.json(updated);
   } catch {
     return Response.json({ error: "Failed to update tournament" }, { status: 500 });

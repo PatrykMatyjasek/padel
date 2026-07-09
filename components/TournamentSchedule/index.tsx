@@ -105,8 +105,8 @@ function ScorePicker({
   onChange: (v: number) => void;
   disabled: boolean;
 }) {
-  const minWin = Math.floor(max / 2) + 1;
-  const nums = Array.from({ length: max - minWin + 1 }, (_, i) => i + minWin);
+  const minScore = max % 2 === 0 ? max / 2 : Math.floor(max / 2) + 1;
+  const nums = Array.from({ length: max - minScore + 1 }, (_, i) => i + minScore);
 
   return (
     <div className="space-y-3 flex-1">
@@ -212,7 +212,9 @@ function MatchRow({
       {editing && !disabled && (
         <div className="border-t px-4 py-4 space-y-4 bg-muted/20">
           <div className="flex items-center justify-between">
-            <p className="text-xs text-muted-foreground">Tap the winning team's score</p>
+            <p className="text-xs text-muted-foreground">
+              {maxPoints % 2 === 0 ? "Tap a team's score (draws allowed)" : "Tap the winning team's score"}
+            </p>
             <button
               onClick={() => setEditing(false)}
               className="text-xs text-muted-foreground hover:text-foreground transition-colors"
